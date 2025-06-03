@@ -1,0 +1,1 @@
+module.exports = { help: () => '幫助內容' }

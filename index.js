@@ -1,0 +1,1 @@
+console.log('LINE GPT 小幫手啟動');

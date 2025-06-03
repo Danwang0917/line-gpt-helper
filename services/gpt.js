@@ -1,0 +1,1 @@
+module.exports = function handleGPT(input) { return '回覆: ' + input }
