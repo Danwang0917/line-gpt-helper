@@ -4,9 +4,14 @@ const app = express();
 
 console.log('LINE GPT 小幫手啟動');
 
-app.use(json());
+app.use(json()); // 解析 JSON 請求
 
-// ✅ 基本 Webhook 路由
+// ✅ 可選：首頁測試用（瀏覽器開啟會看到這行）
+app.get('/', (req, res) => {
+  res.send('LINE GPT 小幫手伺服器啟動成功！');
+});
+
+// ✅ Webhook 路由：LINE 平台會送資料到這
 app.post('/webhook', (req, res) => {
   const events = req.body.events;
 
@@ -14,12 +19,11 @@ app.post('/webhook', (req, res) => {
     return res.status(200).send('No events');
   }
 
-  // 回應每一則訊息
   events.forEach((event) => {
     if (event.type === 'message' && event.message.type === 'text') {
       const userMessage = event.message.text;
       console.log(`收到使用者訊息：${userMessage}`);
-      // 🚧 這裡可以加上 GPT 回覆邏輯，目前只是 log
+      // 未來你可以在這裡呼叫 GPT API 做回覆
     }
   });
 
