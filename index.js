@@ -1,4 +1,3 @@
-
 const express = require('express');
 const { json } = require('body-parser');
 const axios = require('axios');
@@ -6,11 +5,10 @@ const axios = require('axios');
 const app = express();
 app.use(json());
 
-console.log('LINE GPT 小幫手啟動');
+console.log('✅ LINE GPT 小幫手啟動');
 
 app.post('/webhook', async (req, res) => {
   const events = req.body.events;
-
   if (!events || events.length === 0) {
     return res.status(200).send('No events');
   }
@@ -20,9 +18,8 @@ app.post('/webhook', async (req, res) => {
       const userMessage = event.message.text;
       const replyToken = event.replyToken;
 
-      console.log(`📩 收到使用者訊息：${userMessage}`);
+      console.log(`📨 收到使用者訊息：${userMessage}`);
 
-      let replyText = '⚠️ 系統有點不穩，稍後再試看看喔！';
       try {
         const openaiRes = await axios.post(
           'https://api.openai.com/v1/chat/completions',
@@ -41,13 +38,9 @@ app.post('/webhook', async (req, res) => {
           }
         );
 
-        replyText = openaiRes.data.choices[0].message.content;
+        const replyText = openaiRes.data.choices[0].message.content;
         console.log(`🤖 GPT 回覆：${replyText}`);
-      } catch (error) {
-        console.error('❌ GPT 回覆錯誤：', error.message);
-      }
 
-      try {
         await axios.post(
           'https://api.line.me/v2/bot/message/reply',
           {
@@ -62,7 +55,23 @@ app.post('/webhook', async (req, res) => {
           }
         );
       } catch (err) {
-        console.error('❌ LINE 傳送訊息失敗：', err.message);
+        console.error('❌ 回覆錯誤：', err?.response?.data || err.message);
+
+        const fallback = '⚠️ 系統有點不穩，稍後再試看看喔！';
+
+        await axios.post(
+          'https://api.line.me/v2/bot/message/reply',
+          {
+            replyToken,
+            messages: [{ type: 'text', text: fallback }]
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
       }
     }
   }
@@ -72,5 +81,5 @@ app.post('/webhook', async (req, res) => {
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-  console.log(`✅ Render 伺服器啟動成功，監聽 port ${port}`);
+  console.log(`🚀 Render 伺服器啟動成功，監聽 port ${port}`);
 });
