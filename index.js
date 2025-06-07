@@ -2,7 +2,6 @@
 const express = require('express');
 const { json } = require('body-parser');
 const axios = require('axios');
-require('dotenv').config();
 
 const app = express();
 app.use(json());
@@ -11,6 +10,7 @@ console.log('LINE GPT 小幫手啟動');
 
 app.post('/webhook', async (req, res) => {
   const events = req.body.events;
+
   if (!events || events.length === 0) {
     return res.status(200).send('No events');
   }
@@ -20,37 +20,50 @@ app.post('/webhook', async (req, res) => {
       const userMessage = event.message.text;
       const replyToken = event.replyToken;
 
-      const openaiRes = await axios.post(
-        'https://api.openai.com/v1/chat/completions',
-        {
-          model: 'gpt-3.5-turbo',
-          messages: [
-            { role: 'system', content: '你是個友善的 LINE 小幫手' },
-            { role: 'user', content: userMessage }
-          ]
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      console.log(`📩 收到使用者訊息：${userMessage}`);
 
-      const replyText = openaiRes.data.choices[0].message.content;
-      await axios.post(
-        'https://api.line.me/v2/bot/message/reply',
-        {
-          replyToken,
-          messages: [{ type: 'text', text: replyText }]
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`,
-            'Content-Type': 'application/json'
+      let replyText = '⚠️ 系統有點不穩，稍後再試看看喔！';
+      try {
+        const openaiRes = await axios.post(
+          'https://api.openai.com/v1/chat/completions',
+          {
+            model: 'gpt-3.5-turbo',
+            messages: [
+              { role: 'system', content: '你是個友善的 LINE 小幫手' },
+              { role: 'user', content: userMessage }
+            ]
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+              'Content-Type': 'application/json'
+            }
           }
-        }
-      );
+        );
+
+        replyText = openaiRes.data.choices[0].message.content;
+        console.log(`🤖 GPT 回覆：${replyText}`);
+      } catch (error) {
+        console.error('❌ GPT 回覆錯誤：', error.message);
+      }
+
+      try {
+        await axios.post(
+          'https://api.line.me/v2/bot/message/reply',
+          {
+            replyToken,
+            messages: [{ type: 'text', text: replyText }]
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      } catch (err) {
+        console.error('❌ LINE 傳送訊息失敗：', err.message);
+      }
     }
   }
 
@@ -59,5 +72,5 @@ app.post('/webhook', async (req, res) => {
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-  console.log(`伺服器啟動成功，監聽 port ${port}`);
+  console.log(`✅ Render 伺服器啟動成功，監聽 port ${port}`);
 });
