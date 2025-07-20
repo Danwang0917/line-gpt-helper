@@ -1,1 +1,1 @@
-// index entry point
+// index.js 啟動邏輯
