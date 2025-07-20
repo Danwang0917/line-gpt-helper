@@ -1,1 +1,1 @@
-// route handler
+// index entry point
